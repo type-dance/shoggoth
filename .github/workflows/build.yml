@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+
+jobs:
+  build:
+    name: build-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - run: sudo apt install ccache ninja-build
+        if: startsWith(matrix.os, 'ubuntu-')
+
+      - run: brew install ccache ninja
+        if: startsWith(matrix.os, 'macos-')
+
+      - uses: actions/checkout@v3
+
+      - run: git submodule update --init --depth 1
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: 0-ccache-ubuntu-latest-${{ github.run_id }}
+          restore-keys: |
+            0-ccache-ubuntu-latest
+        if: startsWith(matrix.os, 'ubuntu-')
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/Library/Caches/ccache
+          key: 0-ccache-macos-latest-${{ github.run_id }}
+          restore-keys: |
+            0-ccache-macos-latest
+        if: startsWith(matrix.os, 'macos-')
+
+      - run: |
+          pushd node
+          CC="ccache cc" CXX="ccache c++" ./configure --enable-static --experimental-enable-pointer-compression --ninja
+          ninja -v -C out/Release
+          popd
