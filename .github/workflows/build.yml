@@ -53,4 +53,11 @@ jobs:
 
       - run: ./et.mjs
 
+      - run: |
+          pushd node
+          git clean -xdf
+          CC="ccache cc" CXX="ccache c++" ./configure --experimental-enable-pointer-compression --ninja --shared
+          popd
+          ninja -v -C node/out/Release
+
       - run: ccache --recompress 19
