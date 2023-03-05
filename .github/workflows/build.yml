@@ -14,10 +14,15 @@ jobs:
           - ubuntu-latest
           - macos-latest
     steps:
-      - run: sudo apt install ccache ninja-build
+      - run: sudo apt install ccache llvm ninja-build
         if: startsWith(matrix.os, 'ubuntu-')
 
-      - run: brew install ccache ninja
+      - run: |
+          brew install ccache ninja
+          pushd $(mktemp -d)
+            ln -s $(brew --prefix llvm)/bin/llvm-ar
+            echo $PWD >> $GITHUB_PATH
+          popd
         if: startsWith(matrix.os, 'macos-')
 
       - uses: actions/checkout@v3
@@ -43,5 +48,9 @@ jobs:
       - run: |
           pushd node
           CC="ccache cc" CXX="ccache c++" ./configure --enable-static --experimental-enable-pointer-compression --ninja
-          ninja -v -C out/Release
           popd
+          ninja -v -C node/out/Release
+
+      - run: ./et.mjs
+
+      - run: ccache --recompress 19
