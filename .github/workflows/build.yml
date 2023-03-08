@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    name: build-${{ matrix.os }}
+    name: build-${{ matrix.os }}-ghc-${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -13,6 +13,8 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
+        ghc:
+          - 9.4.4
     steps:
       - run: sudo apt install ccache llvm ninja-build
         if: startsWith(matrix.os, 'ubuntu-')
@@ -24,6 +26,10 @@ jobs:
             echo $PWD >> $GITHUB_PATH
           popd
         if: startsWith(matrix.os, 'macos-')
+
+      - uses: haskell/actions/setup@v2.3.4
+        with:
+          ghc-version: ${{ matrix.ghc }}
 
       - uses: actions/checkout@v3
 
@@ -59,5 +65,11 @@ jobs:
           CC="ccache cc" CXX="ccache c++" ./configure --experimental-enable-pointer-compression --ninja --shared
           popd
           ninja -v -C node/out/Release
+
+      - run: |
+          ghc --version
+          cabal --version
+          cp node/out/Release/lib/libnode.so.111 node/out/Release/libshoggoth.so
+          echo :q | ghci -v node/out/Release/libshoggoth.so
 
       - run: ccache --recompress 19
