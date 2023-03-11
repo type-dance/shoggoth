@@ -15,16 +15,34 @@ async function mkdtemp() {
 const node_root = path.resolve("node");
 const build_root = path.resolve(node_root, "out", "Release");
 
-function mk_absolute(p) {
+function mk_absolute_from_build_root(p) {
   return path.resolve(build_root, p);
 }
+
+async function config_gypi_parse(node_root) {
+  return JSON.parse(
+    (
+      await fs.readFile(path.resolve(node_root, "config.gypi"), {
+        encoding: "utf-8",
+      })
+    )
+      .split("\n")
+      .filter((l) => !l.startsWith("#"))
+      .map((l) => l.replaceAll("'", '"'))
+      .join("")
+  );
+}
+
+const config_gypi = await config_gypi_parse(node_root);
 
 function compdb_compile_cmd_parse(cmd) {
   const extra_include_dirs = [];
   const cxx_options = [];
   for (const arg of cmd.split(" ")) {
     if (arg.startsWith("-I")) {
-      extra_include_dirs.push(mk_absolute(arg.replace("-I", "")));
+      extra_include_dirs.push(
+        mk_absolute_from_build_root(arg.replace("-I", ""))
+      );
       continue;
     }
     if (
@@ -72,19 +90,17 @@ function compdb_link_cmd_parse(cmd) {
     }
   }
   return {
-    whole_ars: Array.from(whole_ars).map(mk_absolute),
+    whole_ars: Array.from(whole_ars).map(mk_absolute_from_build_root),
     ars: Array.from(ars)
       .filter((ar) => !whole_ars.has(ar))
-      .map(mk_absolute),
-    objs: Array.from(objs).map(mk_absolute),
+      .map(mk_absolute_from_build_root),
+    objs: Array.from(objs).map(mk_absolute_from_build_root),
   };
 }
 
 function compdb_find_by_output(compdb, basename) {
   return compdb.find((e) => path.basename(e.output) === basename);
 }
-
-const arch = { x64: "x86_64", arm64: "arm64" }[process.arch];
 
 async function whole_ar_to_obj(tmpdir, ar) {
   const o = path.resolve(tmpdir, `${path.basename(ar, ".a")}.o`);
@@ -94,7 +110,15 @@ async function whole_ar_to_obj(tmpdir, ar) {
       return;
     }
     case "darwin": {
-      await execFile("ld", ["-r", "-arch", arch, "-force_load", ar, "-o", o]);
+      await execFile("ld", [
+        "-r",
+        "-arch",
+        config_gypi.variables.target_arch,
+        "-force_load",
+        ar,
+        "-o",
+        o,
+      ]);
       return;
     }
     default:
@@ -116,6 +140,8 @@ async function all_to_one(tmpdir, libname, whole_ars, ars, objs) {
     ...ars,
   ]);
 }
+
+console.log(config_gypi);
 
 const compdb = JSON.parse(
   (
