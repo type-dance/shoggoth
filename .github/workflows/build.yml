@@ -53,23 +53,35 @@ jobs:
 
       - run: |
           pushd node
-          CC="ccache cc" CXX="ccache c++" ./configure --enable-static --experimental-enable-pointer-compression --ninja
+          CC="ccache cc" CXX="ccache c++" ./configure --enable-lto --enable-static --experimental-enable-pointer-compression --ninja --verbose
           popd
           ninja -v -C node/out/Release
+
+      - run: |
+          pushd node
+          nproc
+          make -j$(nproc) test || true
+          popd
 
       - run: ./et.mjs
 
       - run: |
           pushd node
           git clean -xdf
-          CC="ccache cc" CXX="ccache c++" ./configure --experimental-enable-pointer-compression --ninja --shared
+          CC="ccache cc" CXX="ccache c++" ./configure --enable-lto --experimental-enable-pointer-compression --ninja --shared --verbose
           popd
           ninja -v -C node/out/Release
 
       - run: |
+          pushd node
+          nproc
+          make -j$(nproc) test || true
+          popd
+
+      - run: |
           ghc --version
           cabal --version
-          cp node/out/Release/lib/libnode.so.111 node/out/Release/libshoggoth.so
+          cp node/out/Release/lib/libnode.so.$(python3 node/tools/getmoduleversion.py) node/out/Release/libshoggoth.so
           echo :q | ghci -v node/out/Release/libshoggoth.so
 
       - run: ccache --recompress 19
