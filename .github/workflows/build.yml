@@ -59,8 +59,7 @@ jobs:
 
       - run: |
           pushd node
-          nproc
-          make -j$(nproc) test || true
+          make -j3 test || true
           popd
 
       - run: ./et.mjs
@@ -74,8 +73,7 @@ jobs:
 
       - run: |
           pushd node
-          nproc
-          make -j$(nproc) test || true
+          make -j3 test || true
           popd
 
       - run: |

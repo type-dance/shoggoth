@@ -146,7 +146,7 @@ console.log(config_gypi);
 const compdb = JSON.parse(
   (
     await execFile("ninja", ["-C", build_root, "-t", "compdb"], {
-      maxBuffer: 8 * 1024 * 1024,
+      maxBuffer: 16 * 1024 * 1024,
     })
   ).stdout
 );
