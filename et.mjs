@@ -113,7 +113,7 @@ async function whole_ar_to_obj(tmpdir, ar) {
       await execFile("ld", [
         "-r",
         "-arch",
-        config_gypi.variables.target_arch,
+        { x64: "x86_64", arm64: "arm64" }[config_gypi.variables.target_arch],
         "-force_load",
         ar,
         "-o",
