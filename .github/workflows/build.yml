@@ -59,7 +59,7 @@ jobs:
 
       - run: |
           pushd node
-          make -j3 test || true
+          make -j3 test
           popd
 
       - run: ./et.mjs
@@ -77,16 +77,11 @@ jobs:
           popd
 
       - run: |
-          if [ "$(uname -s)" = "Linux" ]
-          then
-            DLL=so
-          else
-            DLL=dylib
-          fi
+          readonly SHLIB_SUFFIX=$(./parse_config_gypi.py | jq -r .variables.shlib_suffix)
 
           ghc --version
           cabal --version
-          cp node/out/Release/$(./parse_config_gypi.py | jq -r .variables.libdir)/libnode.$(./parse_config_gypi.py | jq -r .variables.shlib_suffix) node/out/Release/libshoggoth.$DLL
-          echo :q | ghci -v node/out/Release/libshoggoth.$DLL
+          cp node/out/Release/$(./parse_config_gypi.py | jq -r .variables.libdir)/libnode.$SHLIB_SUFFIX node/out/Release/libshoggoth.$SHLIB_SUFFIX
+          echo :q | ghci -v node/out/Release/libshoggoth.$SHLIB_SUFFIX
 
       - run: ccache --recompress 19
