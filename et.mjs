@@ -21,15 +21,7 @@ function mk_absolute_from_build_root(p) {
 
 async function config_gypi_parse(node_root) {
   return JSON.parse(
-    (
-      await fs.readFile(path.resolve(node_root, "config.gypi"), {
-        encoding: "utf-8",
-      })
-    )
-      .split("\n")
-      .filter((l) => !l.startsWith("#"))
-      .map((l) => l.replaceAll("'", '"'))
-      .join("")
+    (await execFile(path.resolve("parse_config_gypi.py"))).stdout
   );
 }
 

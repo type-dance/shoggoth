@@ -77,9 +77,16 @@ jobs:
           popd
 
       - run: |
+          if [ "$(uname -s)" = "Linux" ]
+          then
+            DLL=so
+          else
+            DLL=dylib
+          fi
+
           ghc --version
           cabal --version
-          cp node/out/Release/lib/libnode.so.$(python3 node/tools/getmoduleversion.py) node/out/Release/libshoggoth.so
-          echo :q | ghci -v node/out/Release/libshoggoth.so
+          cp node/out/Release/$(./parse_config_gypi.py | jq -r .variables.libdir)/libnode.$(./parse_config_gypi.py | jq -r .variables.shlib_suffix) node/out/Release/libshoggoth.$DLL
+          echo :q | ghci -v node/out/Release/libshoggoth.$DLL
 
       - run: ccache --recompress 19
