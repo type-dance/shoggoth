@@ -77,11 +77,16 @@ jobs:
           popd
 
       - run: |
-          readonly SHLIB_SUFFIX=$(./parse_config_gypi.py | jq -r .variables.shlib_suffix)
-
           ghc --version
           cabal --version
-          cp node/out/Release/$(./parse_config_gypi.py | jq -r .variables.libdir)/libnode.$SHLIB_SUFFIX node/out/Release/libshoggoth.$SHLIB_SUFFIX
-          echo :q | ghci -v node/out/Release/libshoggoth.$SHLIB_SUFFIX
+
+          if [ "$(uname -s)" = "Linux" ]
+          then
+            cp node/out/Release/lib/libnode.so node/out/Release/libshoggoth.so
+            echo :q | ghci -v node/out/Release/libshoggoth.so
+          else
+            cp node/out/Release/libnode.dylib node/out/Release/libshoggoth.dylib
+            echo :q | ghci -v node/out/Release/libshoggoth.dylib
+          fi
 
       - run: ccache --recompress 19
